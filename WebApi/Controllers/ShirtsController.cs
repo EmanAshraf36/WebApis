@@ -13,7 +13,7 @@ public class ShirtsController : ControllerBase
     [HttpGet]
     public IActionResult GetShirts()
     {
-        return Ok("reading all the shirts");
+        return Ok(ShirtRepository.GetShirts());
     }
     
     [HttpGet("{id}")]
@@ -24,9 +24,12 @@ public class ShirtsController : ControllerBase
     }
 
     [HttpPost]
+    [Shirt_ValidateCreateShirtFilter]
     public IActionResult CreateShirt([FromBody] Shirt shirt)
     {
-        return Ok("creating a new shirt");
+        ShirtRepository.AddShirt(shirt);
+        return CreatedAtAction(nameof(GetShirtById),
+            new{ id = shirt.ShirtId}, shirt);
     }
 
     [HttpPut]
