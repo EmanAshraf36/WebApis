@@ -48,6 +48,25 @@ public class ShirtRepository
         shirt.ShirtId = maxId + 1;
         
         shirts.Add(shirt);
-
     }
+
+    public static void UpdateShirt(Shirt shirt)
+    {
+        var shirtToUpdate = shirts.First(x=> x.ShirtId == shirt.ShirtId);
+        shirtToUpdate.Brand = shirt.Brand;
+        shirtToUpdate.Color = shirt.Color;
+        shirtToUpdate.Gender = shirt.Gender;
+        shirtToUpdate.Price = shirt.Price;
+        shirtToUpdate.Size = shirt.Size;
+    }
+
+    public static void DeleteShirt(int ShirtId)
+    {
+        var shirt = GetShirtById(ShirtId);
+        if (shirt != null)
+        {
+            shirts.Remove(shirt);
+        }
+    }
+
 }

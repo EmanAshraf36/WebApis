@@ -33,16 +33,21 @@ public class ShirtsController : ControllerBase
     }
 
     [HttpPut]
-    public IActionResult UpdateShirt(int id)
+    public IActionResult UpdateShirt(int id, Shirt shirt)
     {
-        return Ok($"updating a shirt {id}");
+        ShirtRepository.UpdateShirt(shirt);
+        //explain
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
 
     public IActionResult DeleteShirt(int id)
     {
-        return Ok($"deleting a shirt {id}");
+        var shirt = ShirtRepository.GetShirtById(id);
+        ShirtRepository.DeleteShirt(id);
+        //explain?
+        return Ok(shirt);
     }
 
 }
