@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApi.Filters;
+using WebApi.Filters.ExceptionFilters;
 using WebApi.Models;
 using WebApi.Models.Repositories;
 
@@ -32,7 +33,10 @@ public class ShirtsController : ControllerBase
             new{ id = shirt.ShirtId}, shirt);
     }
 
-    [HttpPut]
+    [HttpPut("id")]
+    [Shirt_ValidateShirtIdFilter]
+    [Shirt_ValidateUpdateShirtFilter]
+    [Shirt_HandleUpdateExceptionsFilter]
     public IActionResult UpdateShirt(int id, Shirt shirt)
     {
         ShirtRepository.UpdateShirt(shirt);
@@ -41,6 +45,7 @@ public class ShirtsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Shirt_ValidateShirtIdFilter]
 
     public IActionResult DeleteShirt(int id)
     {
