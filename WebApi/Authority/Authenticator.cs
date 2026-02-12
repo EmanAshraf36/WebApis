@@ -37,4 +37,39 @@ public class Authenticator
             notBefore: DateTime.UtcNow);
         return new JwtSecurityTokenHandler().WriteToken(jwt);
     }
+
+    public static bool VerifyToken(string token, string strSecretKey)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return false;
+
+        if (token.StartsWith("Bearer "))
+        {
+            token = token.Substring(6).Trim();
+        }
+
+        var SecretKey = Encoding.ASCII.GetBytes(strSecretKey);
+
+        SecurityToken securityToken;
+        
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(SecretKey),
+                    ValidateLifetime = true,
+                    ValidateAudience = false,
+                    ValidateIssuer = false,
+                    ClockSkew = TimeSpan.Zero
+                },
+                out securityToken);
+        }
+        catch (SecurityTokenException)
+        {
+            return false;
+        }
+
+        return securityToken != null;
+    }
 }

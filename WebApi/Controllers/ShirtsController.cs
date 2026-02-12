@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using WebApi.Data;
 using WebApi.Filters;
 using WebApi.Filters.ActionFilters;
+using WebApi.Filters.AuthFilters;
 using WebApi.Filters.ExceptionFilters;
 using WebApi.Models;
 using WebApi.Models.Repositories;
@@ -11,6 +12,7 @@ namespace WebApi.Controllers;
 //placed even before the class 
 [ApiController]
 [Route("api/[controller]")]
+[JwtTokenAuthFilter]
 
 public class ShirtsController : ControllerBase
 {
