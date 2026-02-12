@@ -1,33 +1,46 @@
+using System.Net.Http.Headers;
+using Newtonsoft.Json;
+
 namespace WebApp.Data;
 
 public class WebApiExecutor : IWebApiExecutor
 {
     private const string apiName = "ShirtsApi";
+    private const string authApiName = "AuthorityApi";
     private readonly IHttpClientFactory httpClientFactory;
+    private readonly IConfiguration configuration;
 
-    public WebApiExecutor(IHttpClientFactory httpClientFactory)
+    public WebApiExecutor(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
-       this.httpClientFactory = httpClientFactory;
+        this.httpClientFactory = httpClientFactory;
+        this.configuration = configuration;
     }
 
-    public async Task<T> InvokeGet<T>(string relativeUrl)
+    public async Task<T?> InvokeGet<T>(string relativeUrl)
     {
         var httpClient = httpClientFactory.CreateClient(apiName);
-        return await httpClient.GetFromJsonAsync<T>(relativeUrl);
+        await AddJwtToHeader(httpClient);
+        var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl);
+        var response = await httpClient.SendAsync(request);
+        await HandlePotentialError(response);
+        return await response.Content.ReadFromJsonAsync<T>();
     }
 
-    public async Task<T> InvokePost<T>(string relativeUrl, T obj)
+    public async Task<T?> InvokePost<T>(string relativeUrl, T obj)
     {
         var httpClient = httpClientFactory.CreateClient(apiName);
-        var response = await httpClient.PostAsJsonAsync(relativeUrl, obj);
-        response.EnsureSuccessStatusCode();
+        await AddJwtToHeader(httpClient);
         
+        var response = await httpClient.PostAsJsonAsync(relativeUrl, obj);
+        await HandlePotentialError(response);
+
         return await response.Content.ReadFromJsonAsync<T>();
     }
 
     public async Task InvokePut<T>(string relativeUrl, T obj)
     {
         var httpClient = httpClientFactory.CreateClient(apiName);
+        await AddJwtToHeader(httpClient);
         var response = await httpClient.PutAsJsonAsync(relativeUrl, obj);
         await HandlePotentialError(response);
     }
@@ -35,9 +48,11 @@ public class WebApiExecutor : IWebApiExecutor
     public async Task InvokeDelete(string relativeUrl)
     {
         var httpClient = httpClientFactory.CreateClient(apiName);
+        await AddJwtToHeader(httpClient);
         var response = await httpClient.DeleteAsync(relativeUrl);
         await HandlePotentialError(response);
     }
+
     private async Task HandlePotentialError(HttpResponseMessage httpResponse)
     {
         if (!httpResponse.IsSuccessStatusCode)
@@ -45,5 +60,27 @@ public class WebApiExecutor : IWebApiExecutor
             var errorJson = await httpResponse.Content.ReadAsStringAsync();
             throw new WebApiException(errorJson);
         }
-    } 
+    }
+
+    private async Task AddJwtToHeader(HttpClient httpClient)
+    {
+        var clientId = configuration.GetValue<string>("ClientId");
+        var secret = configuration.GetValue<string>("Secret");
+        
+        //Authenticate
+        var authoClient = httpClientFactory.CreateClient(authApiName);
+        var response = await authoClient.PostAsJsonAsync("auth", new AppCredential
+        {
+            ClientId = clientId,
+            Secret = secret
+        });
+        response.EnsureSuccessStatusCode();
+
+        //get the Json Web token JWT
+        string strToken = await response.Content.ReadAsStringAsync();
+        var token = JsonConvert.DeserializeObject<JwtToken>(strToken);
+        
+        //pass the JWT to endpoints through the http headers
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token?.AccessToken);
+    }
 }
